@@ -1,4 +1,4 @@
-### Population Genomics course project
+### Genomic Thinking course project
 ## GWAS of Height
 
 
