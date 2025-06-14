@@ -5,7 +5,7 @@
 
 ### Filtering bfiles to only contain IDs with phenotypic data
 
-```R
+```Bash
 awk '{print $1, $1}' height.txt > keep_height_ids.txt
 plink --bfile gwas_data --keep keep_height_ids.txt --make-bed --out gwas_data_height
 #1376653 variants and 1071 people pass filters and QC.
