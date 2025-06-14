@@ -825,6 +825,7 @@ plink --bfile Unknown_postsex_specificSNPs_geno_het_mind_unrelated_hwemaf --excl
 plink --bfile OmniExpress_postsex_specificSNPs_geno_het_mind_unrelated_hwemaf --exclude OmniExpress_ambiguous.txt --make-bed --out OmniExpress_noambig
 plink --bfile Illumina_GSAs_postsex_specificSNPs_geno_het_mind_unrelated_hwemaf --exclude Illumina_GSAs_ambiguous.txt --make-bed --out Illumina_GSAs_noambig
 ```
+### gathering common snps accros chips
 ```R
 get_snps <- function(file) read.table(file, header=FALSE)$V2
 snps1 <- get_snps("OmniExpress_plus_noambig.bim")
@@ -838,7 +839,7 @@ common_snps <- Reduce(intersect, list(snps1, snps2, snps3, snps4, snps5))
 write.table(common_snps, "common.snps", quote=FALSE, row.names=FALSE, col.names=FALSE)
 
 ```
-
+### extracting only common snps accros chips
 
 ```R
 plink --bfile OmniExpress_plus_noambig --extract common.snps --make-bed --out OmniExpress_plus_common1
@@ -849,7 +850,7 @@ plink --bfile Illumina_GSAs_noambig --extract common.snps --make-bed --out Illum
 
 ```
 
-
+## Merging all the chip datasets post QC
 ```R
 # Try chip2 first
 plink --bfile OmniExpress_plus_common1 --bmerge HTS_iSelect_HD_common1 --make-bed --out merge_OmniExpress_plus_HTS_iSelect_HD
@@ -862,12 +863,7 @@ plink --bfile merge_OmniExpress_plus_HTS_iSelect_HD_Unknown_OmniExpress --bmerge
 
 ```
 
-
-```R
-
-```
-
-
+### preping phenotype.txt and covariates.txt files for GWA
 ```R
 # Load FID/IID from merged_final
 fam <- read.table("merge_all.fam", header=FALSE)
@@ -892,17 +888,10 @@ covar <- fam[, c("FID", "IID", "SEX")]
 write.table(covar, file="covariates.txt", quote=FALSE, row.names=FALSE, col.names=TRUE)
 
 ```
-
-
-```R
-
-```
-
+# PCA
 
 ```R
 plink --bfile merge_all --pca 10 --out pca_merge_all
-
-# This will create pca.eigenvec
 
 ```
 
@@ -1011,12 +1000,7 @@ head(pca_meta)
 </tbody>
 </table>
 
-
-
-
-```R
-
-```
+### PCA Plot Colored by Chip
 
 
 ```R
@@ -1036,7 +1020,7 @@ ggplot(pca_meta, aes(x = PC1, y = PC2, color = chip)) +
 ![png](output_17_0.png)
     
 
-
+### PCA Plot Colored by Sex
 
 ```R
 ggplot(pca_meta, aes(x = PC1, y = PC2, color = inferred_sex)) +
@@ -1080,7 +1064,7 @@ head(pca_meta_pheno)
 </table>
 
 
-
+### adjusting height to bins for visualisation
 
 ```R
 pca_meta_pheno$Height_bin <- cut(
@@ -1090,7 +1074,7 @@ pca_meta_pheno$Height_bin <- cut(
   labels = paste0(seq(140, 190, by = 10), "-", seq(149, 199, by = 10))
 )
 ```
-
+### PCA Plot Colored by Height
 
 ```R
 ggplot(pca_meta_pheno, aes(x = PC1, y = PC2, color = Height_bin)) +
@@ -1109,10 +1093,7 @@ ggplot(pca_meta_pheno, aes(x = PC1, y = PC2, color = Height_bin)) +
 
 
 
-```R
-
-```
-
+### Including 1-10 PCs in the covariates.txt
 
 ```R
 pca <- read.table("pca_merge_all.eigenvec", header=FALSE)
@@ -1122,7 +1103,7 @@ covar <- merge(covar, pca, by=c("FID", "IID"))
 write.table(covar, "covariates.txt", quote=FALSE, row.names=FALSE, col.names=TRUE)
 
 ```
-
+# GWAS
 
 ```R
 plink --bfile merge_all \
@@ -1133,12 +1114,7 @@ plink --bfile merge_all \
   --out gwas_with_pcs
 
 ```
-
-
-```R
-
-```
-
+### QQ and Manhattan plot
 
 ```R
 # Load GWAS results
@@ -1192,6 +1168,7 @@ manhattan(gwas, chr="CHR", bp="BP", snp="SNP", p="P",
 ![png](output_27_0.png)
     
 
+### inflation factor analysis
 
 Lambda GC (Genomic Control inflation factor)to check whether your test statistics are inflated, which could indicate population stratification, cryptic relatedness, or other biases.
 
@@ -1209,7 +1186,7 @@ cat("Lambda GC:", round(lambda_gc, 3), "\n")
     Lambda GC: 0.998 
 
 
-### Repeat GWAS without PCs as covariates
+### Repeat GWAS without PCs as covariates (Model 1)
 
 
 ```R
